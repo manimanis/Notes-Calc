@@ -31,6 +31,21 @@ class DecimalNumber {
   }
 };
 
+function dragstartHandler(ev) {
+  ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function dragoverHandler(ev) {
+  ev.preventDefault();
+}
+
+function dropHandler(ev) {
+  ev.preventDefault();
+  const data = ev.dataTransfer.getData("text");
+  // ev.target.appendChild(document.getElementById(data));
+  app.removeItem(data);
+}
+
 function over40RoundTo2ndDec(value) {
   return value / 2;
 }
@@ -39,7 +54,7 @@ function over40RoundTo025(value) {
   return roundTo(value / 2, 0.25);
 }
 
-function roundTo(value, roundVal=0.25) {
+function roundTo(value, roundVal = 0.25) {
   return Math.ceil(value / roundVal) * roundVal;
 }
 
@@ -62,7 +77,8 @@ const app = new Vue({
     runningTotal: 0.0,
     finalTotal: 0.0,
     computeMethod: 5,
-    bareme: 40
+    bareme: 40,
+    selectedNote: -1
   },
   methods: {
     appendNumber: function () {
@@ -89,6 +105,36 @@ const app = new Vue({
     },
     setBaseValue: function (selValue) {
       this.selValue = selValue;
+    },
+    selectNote: function (idx) {
+      this.selectedNote = idx;
+    },
+    moveLeft: function () {
+      if (this.selectedNote <= 0) {
+        return;
+      }
+      this.moveItem(this.selectedNote, this.selectedNote - 1);
+      this.selectedNote--;
+    },
+    moveRight: function () {
+      if (this.selectedNote >= this.listNotes.length - 1) {
+        return;
+      }
+      this.moveItem(this.selectedNote, this.selectedNote + 1);
+      this.selectedNote++;
+    },
+    moveItem: function (from, to) {
+      const el1 = this.listNotes[from];
+      const el2 = this.listNotes[to];
+      this.listNotes[from] = el2;
+      this.listNotes[to] = el1;
+      this.$forceUpdate();
+    },
+    removeItem: function (itemId) {
+      const idx = +itemId.substring(5);
+      this.listNotes.splice(idx, 1);
+      this.updateTotal();
+      this.$forceUpdate();
     }
   }
 });

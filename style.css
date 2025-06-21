@@ -1,16 +1,16 @@
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 body {
-  font-family: sans-serif;
+	font-family: sans-serif;
 }
 
 #int,
 #frac {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
 }
 
 #list {
@@ -33,6 +33,7 @@ body {
 	font-size: 16pt;
 	position: relative;
 	border-radius: 5px;
+  cursor: pointer;
 }
 
 .item span {
@@ -47,31 +48,36 @@ body {
 	border-radius: 3px;
 }
 
+.item.selected {
+	background-color: #000;
+	color: #fff;
+}
+
 #total {
-  background-color: #666;
-  border: #666 solid 2px;
-  display: flex;
-  justify-content: space-between;
+	background-color: #666;
+	border: #666 solid 2px;
+	display: flex;
+	justify-content: space-between;
 }
 
 #total>div {
-  width: 45%;
-  border-right: #eee solid 1px;
+	width: 45%;
+	border-right: #eee solid 1px;
 }
 
-#total > div:last-of-type {
+#total>div:last-of-type {
 	border-right: none;
 }
 
 #runningTotal,
 #finalTotal {
-  text-align: center;
-  font-size: 40pt;
-  color: #fff;
+	text-align: center;
+	font-size: 40pt;
+	color: #fff;
 }
 
 #total>button {
-  width: 10%;
+	width: 10%;
 }
 
 .title {
@@ -81,25 +87,25 @@ body {
 }
 
 #frac>button {
-  width: 25%;
-  font-size: 26pt;
+	width: 25%;
+	font-size: 26pt;
 }
 
 #int>button {
-  width: 20%;
-  font-size: 26pt;
+	width: 20%;
+	font-size: 26pt;
 }
 
 #num {
-  display: block;
-  width: 100%;
-  background-color: #f0f0f0;
-  text-align: center;
-  font-size: 28pt;
-  border: #333 solid 5px;
-  margin: 10px 0 0;
+	display: block;
+	width: 100%;
+	background-color: #f0f0f0;
+	text-align: center;
+	font-size: 28pt;
+	border: #333 solid 5px;
+	margin: 10px 0 0;
 }
 
 select {
-  width: 100%;
+	width: 100%;
 }
