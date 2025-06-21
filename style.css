@@ -14,40 +14,37 @@ body {
 }
 
 #list {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  height: 40vh;
-  border: #567 solid 2px;
-  padding: 5px;
-  background-color: #f5f5f5;
-  counter-reset: itemcount;
-  align-content: flex-start;
-  overflow: auto;
-}
-
-.item::before {
-  counter-increment: itemcount;
-  content: counter(itemcount);
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  line-height: 33px;
-  font-size: 10pt;
-  background-color: #333;
-  color: white;
-  padding: 2px 5px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	height: 40vh;
+	border: #567 solid 2px;
+	padding: 2px;
+	background-color: #f5f5f5;
+	counter-reset: itemcount;
+	align-content: flex-start;
+	overflow: auto;
 }
 
 .item {
-  border: #666 solid 1px;
-  padding: 5px 5px 5px 30px;
-  margin: 2px;
-  font-size: 18pt;
-  position: relative;
-  border-radius: 5px;
+	border: #666 solid 1px;
+	padding: 2px;
+	margin: 2px;
+	font-size: 16pt;
+	position: relative;
+	border-radius: 5px;
+}
+
+.item span {
+	font-size: 70%;
+	background-color: #666;
+	color: #fff;
+	line-height: 30px;
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: 2px;
+	padding: 2px;
+	border-radius: 3px;
 }
 
 #total {
@@ -57,16 +54,30 @@ body {
   justify-content: space-between;
 }
 
+#total>div {
+  width: 45%;
+  border-right: #eee solid 1px;
+}
+
+#total > div:last-of-type {
+	border-right: none;
+}
+
 #runningTotal,
 #finalTotal {
   text-align: center;
-  font-size: 48pt;
+  font-size: 40pt;
   color: #fff;
-  width: 45%;
 }
 
 #total>button {
   width: 10%;
+}
+
+.title {
+	text-align: center;
+	font-weight: bold;
+	color: #eee;
 }
 
 #frac>button {

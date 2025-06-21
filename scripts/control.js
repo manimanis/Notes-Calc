@@ -57,9 +57,12 @@ const app = new Vue({
   data: {
     currNum: new DecimalNumber(),
     listNotes: [],
+    baremes: [10, 20, 30, 30, 40, 40],
+    selValue: 0,
     runningTotal: 0.0,
     finalTotal: 0.0,
-    computeMethod: 5
+    computeMethod: 5,
+    bareme: 40
   },
   methods: {
     appendNumber: function () {
@@ -83,6 +86,9 @@ const app = new Vue({
       }
       this.listNotes = [];
       this.updateTotal();
+    },
+    setBaseValue: function (selValue) {
+      this.selValue = selValue;
     }
   }
 });

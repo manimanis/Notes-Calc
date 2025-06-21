@@ -11,11 +11,18 @@
 <body>
   <div id="app">
     <div id="list">
-      <div class="item" v-for="(note, idx) in listNotes">{{note.getVal().toFixed(2)}}</div>
+      <div class="item" v-for="(note, idx) in listNotes"><span>{{idx+1}}</span>{{note.getVal().toFixed(2)}}</div>
     </div>
     <div id="total">
-      <div id="runningTotal">{{runningTotal.toFixed(2)}}</div>
-      <div id="finalTotal">{{finalTotal.toFixed(2)}}</div>
+      <div v-if="baremes[computeMethod] != 20">
+        <div class="title">Barème sur {{baremes[computeMethod]}}</div>
+        <div id="runningTotal">{{runningTotal.toFixed(2)}}</div>
+      </div>
+      <div>
+        <div class="title">Note Finale</div>
+        <div id="finalTotal">{{finalTotal.toFixed(2)}}</div>
+      </div>
+      
       <button v-bind:disabled="listNotes.length == 0" v-on:click="resetCalc()" title="Remise à zéro">X</button>
     </div>
     <div id="control">
@@ -28,8 +35,9 @@
         <button id="p3-4" data-value="75" v-on:click="currNum.setDecimal(75)">¾</button>
       </div>
       <div id="int">
-        <template v-for="n in 20">
-          <button v-bind:id="'int-' + (n - 1)" v-on:click="currNum.setInteger(n - 1)">{{n - 1}}</button>
+        <button v-for="n in 5" v-on:click="setBaseValue((n - 1) * 5)">{{(n - 1) * 5}}</button>
+        <template v-for="n in 5">
+          <button v-bind:id="'int-' + (n - 1)" v-on:click="currNum.setInteger(selValue + n - 1)">{{selValue + n - 1}}</button>
         </template>
       </div>
       <div id="rounding">
