@@ -1,0 +1,94 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+#int,
+#frac {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+#list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  height: 40vh;
+  border: #567 solid 2px;
+  padding: 5px;
+  background-color: #f5f5f5;
+  counter-reset: itemcount;
+  align-content: flex-start;
+  overflow: auto;
+}
+
+.item::before {
+  counter-increment: itemcount;
+  content: counter(itemcount);
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  line-height: 33px;
+  font-size: 10pt;
+  background-color: #333;
+  color: white;
+  padding: 2px 5px;
+}
+
+.item {
+  border: #666 solid 1px;
+  padding: 5px 5px 5px 30px;
+  margin: 2px;
+  font-size: 18pt;
+  position: relative;
+  border-radius: 5px;
+}
+
+#total {
+  background-color: #666;
+  border: #666 solid 2px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#runningTotal,
+#finalTotal {
+  text-align: center;
+  font-size: 48pt;
+  color: #fff;
+  width: 45%;
+}
+
+#total>button {
+  width: 10%;
+}
+
+#frac>button {
+  width: 25%;
+  font-size: 26pt;
+}
+
+#int>button {
+  width: 20%;
+  font-size: 26pt;
+}
+
+#num {
+  display: block;
+  width: 100%;
+  background-color: #f0f0f0;
+  text-align: center;
+  font-size: 28pt;
+  border: #333 solid 5px;
+  margin: 10px 0 0;
+}
+
+select {
+  width: 100%;
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculatrice</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="app">
+    <div id="list">
+      <div class="item" v-for="(note, idx) in listNotes">{{note.getVal().toFixed(2)}}</div>
+    </div>
+    <div id="total">
+      <div id="runningTotal">{{runningTotal.toFixed(2)}}</div>
+      <div id="finalTotal">{{finalTotal.toFixed(2)}}</div>
+      <button v-bind:disabled="listNotes.length == 0" v-on:click="resetCalc()" title="Remise à zéro">X</button>
+    </div>
+    <div id="control">
+      <button id="num" v-on:click="appendNumber()"
+        v-bind:disabled="currNum.getVal() == 0.0">{{currNum.getVal().toFixed(2)}}</button>
+      <div id="frac">
+        <button id="p0-4" data-value="0" v-on:click="currNum.setDecimal(0)">0</button>
+        <button id="p1-4" data-value="25" v-on:click="currNum.setDecimal(25)">¼</button>
+        <button id="p1-2" data-value="50" v-on:click="currNum.setDecimal(50)">½</button>
+        <button id="p3-4" data-value="75" v-on:click="currNum.setDecimal(75)">¾</button>
+      </div>
+      <div id="int">
+        <template v-for="n in 20">
+          <button v-bind:id="'int-' + (n - 1)" v-on:click="currNum.setInteger(n - 1)">{{n - 1}}</button>
+        </template>
+      </div>
+      <div id="rounding">
+        <select v-model="computeMethod" v-on:change="updateTotal()">
+          <option value="0">Note sur 10</option>
+          <option value="1">Note sur 20</option>
+          <option value="2">Note sur 30, Arrondi à 0.25 près</option>
+          <option value="3">Note sur 30, Arrondi 2<sup>ème</sup> décimale</option>
+          <option value="4">Note sur 40, Arrondi à 0.25 près</option>
+          <option value="5">Note sur 40, Arrondi 2<sup>ème</sup> décimale</option>
+        </select>  
+      </div>
+    </div>
+  </div>
+  <script src="scripts/vue.min.js"></script>
+  <script src="scripts/control.js"></script>
+</body>
+
+</html>
