@@ -13,7 +13,6 @@ const FILES_TO_CACHE = [
   "images/refresh.svg",
   "images/settings-line.svg",
   "index.html",
-  "sw.js",
   "style.css"
 ];
 

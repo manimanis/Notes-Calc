@@ -108,9 +108,9 @@ const app = new Vue({
     selectedNote: -1
   },
   mounted: function () {
-    for (let i = 0; i < 20; i++) {
-      this.appendNumber(DecimalNumber.random());
-    }
+    // for (let i = 0; i < 20; i++) {
+    //   this.appendNumber(DecimalNumber.random());
+    // }
   },
   methods: {
     appendNumber: function (number) {

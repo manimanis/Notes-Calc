@@ -18,13 +18,10 @@
 </head>
 
 <body>
-  <header class="header">
-    <h1>
-      Calc Notes
-    </h1>
+  <div>
     <button id="butInstall" aria-label="Install" hidden></button>
     <button id="btn-settings" aria-label="Settings" hidden></button>
-  </header>
+  </div>
 
   <div id="app" v-on:keyup.left="moveLeft()" v-on:keyup.right="moveRight()">
     <div id="list" ondrop="dropHandlerMoveLast(event)" ondragover="dragoverHandler(event)">

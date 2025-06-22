@@ -91,12 +91,14 @@ body {
 #frac>button {
   width: 25%;
   font-size: 26pt;
+  padding: 10px;
 }
 
 #int>button,
 #base>button {
   width: 20%;
   font-size: 26pt;
+  padding: 10px;
 }
 
 #num {
