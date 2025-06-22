@@ -9,6 +9,9 @@ const FILES_TO_CACHE = [
   "scripts/control.js",
   "scripts/vue.min.js",
   "scripts/install.js",
+  "images/install.svg",
+  "images/refresh.svg",
+  "images/settings-line.svg",
   "index.html",
   "sw.js",
   "style.css"
