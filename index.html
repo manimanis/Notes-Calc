@@ -7,13 +7,13 @@
   <title>Calculatrice</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  
+
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Calc Notes PWA">
 
   <meta name="description" content="Calc Notes Application">
-  
+
   <meta name="theme-color" content="#ffffff" />
 </head>
 
@@ -30,7 +30,9 @@
     <div id="list" ondrop="dropHandlerMoveLast(event)" ondragover="dragoverHandler(event)">
       <div class="item" v-bind:id="'item-' + idx" v-bind:class="{'selected': selectedNote == idx}" tabindex="0"
         v-for="(note, idx) in listNotes" v-on:click="selectNote(idx)" draggable="true"
-        ondragstart="dragstartHandler(event)" ondrop="dropHandlerMoveBefore(event)"><span>{{idx+1}}</span>{{note.getVal().toFixed(2)}}</div>
+        ondragstart="dragstartHandler(event)" ondrop="dropHandlerMoveBefore(event)">
+        <span>{{idx+1}}</span>{{note.getVal().toFixed(2)}}
+      </div>
     </div>
     <div id="total">
       <div v-if="baremes[computeMethod] != 20">
@@ -48,18 +50,18 @@
     <div id="control">
       <button id="num" v-on:click="appendNumber()"
         v-bind:disabled="currNum.getVal() == 0.0">{{currNum.getVal().toFixed(2)}}</button>
+      <div id="int">
+        <button v-for="n in 5" v-bind:id="'int-' + (n - 1)" v-on:click="currNum.setInteger(selValue + n - 1)">{{selValue
+          + n - 1}}</button>
+      </div>
       <div id="frac">
         <button id="p0-4" data-value="0" v-on:click="currNum.setDecimal(0)">0</button>
         <button id="p1-4" data-value="25" v-on:click="currNum.setDecimal(25)">¼</button>
         <button id="p1-2" data-value="50" v-on:click="currNum.setDecimal(50)">½</button>
         <button id="p3-4" data-value="75" v-on:click="currNum.setDecimal(75)">¾</button>
       </div>
-      <div id="int">
+      <div id="base">
         <button v-for="n in 5" v-on:click="setBaseValue((n - 1) * 5)">{{(n - 1) * 5}}</button>
-        <template v-for="n in 5">
-          <button v-bind:id="'int-' + (n - 1)" v-on:click="currNum.setInteger(selValue + n - 1)">{{selValue + n -
-            1}}</button>
-        </template>
       </div>
       <div id="rounding">
         <select v-model="computeMethod" v-on:change="updateTotal()">
