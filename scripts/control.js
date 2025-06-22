@@ -18,6 +18,14 @@ class DecimalNumber {
     return (this.intPart + this.decPart / 100);
   }
 
+  static random() {
+    let rnd;
+    do {
+      rnd = new DecimalNumber(randint(0, 3), randint(0, 3) * 25);
+    } while (rnd.getVal() == 0);
+    return rnd;
+  }
+
   static getValue(num) {
     return num.getVal();
   }
@@ -31,6 +39,10 @@ class DecimalNumber {
   }
 };
 
+function randint(a, b) {
+  return Math.floor(a + (b - a + 1) * Math.random());
+}
+
 function dragstartHandler(ev) {
   ev.dataTransfer.setData("text", ev.target.id);
 }
@@ -43,7 +55,22 @@ function dropHandler(ev) {
   ev.preventDefault();
   const data = ev.dataTransfer.getData("text");
   // ev.target.appendChild(document.getElementById(data));
-  app.removeItem(data);
+  app.removeItem(+data.substring(5));
+}
+
+function dropHandlerMoveLast(ev) {
+  ev.stopPropagation();
+  const data = ev.dataTransfer.getData("text");
+  app.moveLast(+data.substring(5));
+}
+
+function dropHandlerMoveBefore(ev) {
+  ev.stopPropagation();
+  const data = ev.dataTransfer.getData("text");
+  const target = ev.target;
+  const firstIdx = +data.substring(5);
+  const targetIdx = +ev.target.id.substring(5);
+  app.moveItem(firstIdx, targetIdx);
 }
 
 function over40RoundTo2ndDec(value) {
@@ -80,12 +107,20 @@ const app = new Vue({
     bareme: 40,
     selectedNote: -1
   },
+  mounted: function () {
+    // for (let i = 0; i < 10; i++) {
+    //   this.appendNumber(DecimalNumber.random());
+    // }
+  },
   methods: {
-    appendNumber: function () {
-      if (this.currNum.getVal() == 0) {
+    appendNumber: function (number) {
+      if (number == null) {
+        number = this.currNum;
+      }
+      if (number.getVal() == 0) {
         return;
       }
-      this.listNotes.push(this.currNum);
+      this.listNotes.push(number);
       this.currNum = new DecimalNumber();
       this.updateTotal();
     },
@@ -109,6 +144,9 @@ const app = new Vue({
     selectNote: function (idx) {
       this.selectedNote = idx;
     },
+    moveLast: function (index) {
+      this.moveItem(index, this.listNotes.length - 1);
+    },
     moveLeft: function () {
       if (this.selectedNote <= 0) {
         return;
@@ -124,18 +162,17 @@ const app = new Vue({
       this.selectedNote++;
     },
     moveItem: function (from, to) {
+      console.log("Move from", from, 'to', to);
       const el1 = this.listNotes[from];
-      const el2 = this.listNotes[to];
-      this.listNotes[from] = el2;
-      this.listNotes[to] = el1;
+      this.listNotes.splice(from, 1);
+      this.listNotes.splice(to, 0, el1);
       this.$forceUpdate();
     },
-    removeItem: function (itemId) {
-      const idx = +itemId.substring(5);
+    removeItem: function (idx) {
       this.listNotes.splice(idx, 1);
       this.updateTotal();
       this.$forceUpdate();
-    }
+    },
   }
 });
 
