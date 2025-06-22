@@ -18,6 +18,14 @@
 </head>
 
 <body>
+  <header class="header">
+    <h1>
+      Calc Notes
+    </h1>
+    <button id="butInstall" aria-label="Install" hidden></button>
+    <button id="btn-settings" aria-label="Settings"></button>
+  </header>
+
   <div id="app" v-on:keyup.left="moveLeft()" v-on:keyup.right="moveRight()">
     <div id="list" ondrop="dropHandlerMoveLast(event)" ondragover="dragoverHandler(event)">
       <div class="item" v-bind:id="'item-' + idx" v-bind:class="{'selected': selectedNote == idx}" tabindex="0"
