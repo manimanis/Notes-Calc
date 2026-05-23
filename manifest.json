@@ -3,6 +3,6 @@
     "short_name": "CalcNotes App",
     "start_url": "index.html",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#ffffff"
+    "background_color": "#f1f5f9",
+    "theme_color": "#312e81"
   }

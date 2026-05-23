@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Calculatrice</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
@@ -14,20 +14,23 @@
 
   <meta name="description" content="Calc Notes Application">
 
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#312e81" />
 </head>
 
 <body>
-  <div>
-    <button id="butInstall" aria-label="Install" hidden></button>
-    <button id="btn-settings" aria-label="Settings" hidden></button>
-  </div>
+  <nav class="toolbar" aria-label="Actions">
+    <button id="butInstall" type="button" aria-label="Installer l'application" hidden></button>
+    <button id="btn-settings" type="button" aria-label="Paramètres" hidden></button>
+  </nav>
 
   <div id="app" v-on:keyup.left="moveLeft()" v-on:keyup.right="moveRight()">
     <div id="list" ondrop="dropHandlerMoveLast(event)" ondragover="dragoverHandler(event)">
       <div class="item" v-bind:id="'item-' + idx" v-bind:class="{'selected': selectedNote == idx}" tabindex="0"
         v-for="(note, idx) in listNotes" v-on:click="selectNote(idx)" draggable="true"
-        ondragstart="dragstartHandler(event)" ondrop="dropHandlerMoveBefore(event)">
+        ondragstart="dragstartHandler(event)" ondragend="dragendHandler(event)"
+        ondragover="dragoverHandler(event)" ondrop="dropHandlerMoveBefore(event)"
+        ontouchstart="touchDragStart(event)" ontouchend="touchDragEnd(event)"
+        ontouchcancel="touchDragEnd(event)">
         <span>{{idx+1}}</span>{{note.getVal().toFixed(2)}}
       </div>
     </div>
@@ -41,8 +44,10 @@
         <div id="finalTotal">{{finalTotal.toFixed(2)}}</div>
       </div>
 
-      <button v-bind:disabled="listNotes.length == 0" v-on:click="resetCalc()" title="Remise à zéro"
-        ondrop="dropHandler(event)" ondragover="dragoverHandler(event)">🗑</button>
+      <button id="btn-trash" type="button" v-bind:disabled="listNotes.length == 0" v-on:click="resetCalc()"
+        title="Glisser une note ici pour la supprimer · Clic pour tout effacer"
+        ondrop="dropHandler(event)" ondragover="dragoverHandler(event)"
+        ondragenter="trashDragEnterHandler(event)" ondragleave="trashDragLeaveHandler(event)">🗑</button>
     </div>
     <div id="control">
       <button id="num" v-on:click="appendNumber()"
@@ -58,7 +63,8 @@
         <button id="p3-4" data-value="75" v-on:click="currNum.setDecimal(75)">¾</button>
       </div>
       <div id="base">
-        <button v-for="n in 5" v-on:click="setBaseValue((n - 1) * 5)">{{(n - 1) * 5}}</button>
+        <button v-for="n in 5" v-bind:class="{'is-active': selValue === (n - 1) * 5}"
+          v-on:click="setBaseValue((n - 1) * 5)">{{(n - 1) * 5}}</button>
       </div>
       <div id="rounding">
         <select v-model="computeMethod" v-on:change="updateTotal()">
