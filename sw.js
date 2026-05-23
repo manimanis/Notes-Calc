@@ -1,7 +1,7 @@
 'use strict';
 
 // Update cache names any time any of the cached files change.
-const CACHE_NAME = 'static-cache-v4';
+const CACHE_NAME = 'static-cache-v5';
 
 // Add list of files to cache here.
 const FILES_TO_CACHE = [
@@ -12,11 +12,13 @@ const FILES_TO_CACHE = [
   "scripts/control.js",
   "scripts/vue.min.js",
   "scripts/install.js",
+  "scripts/pwa.js",
   "images/install.svg",
   "images/refresh.svg",
   "images/settings-line.svg",
   "images/icon.svg",
   "images/icon-maskable.svg",
+  "images/icon-180.png",
   "images/icon-192.png",
   "images/icon-512.png",
 ];
