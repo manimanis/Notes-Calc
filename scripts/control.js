@@ -43,180 +43,9 @@ function randint(a, b) {
   return Math.floor(a + (b - a + 1) * Math.random());
 }
 
-function parseItemIndex(id) {
-  if (!id || !id.startsWith('item-')) {
-    return null;
-  }
-  const idx = +id.substring(5);
-  return Number.isNaN(idx) ? null : idx;
-}
-
-function getItemFromEvent(ev) {
-  const el = ev.target.closest('.item');
-  return el && el.id ? el : null;
-}
-
-const DRAG_THRESHOLD = 10;
+const LONG_PRESS_MS = 500;
+let longPressTimer = null;
 let suppressItemClick = false;
-
-const dragState = {
-  sourceIndex: null,
-  pointerId: null,
-  startX: 0,
-  startY: 0,
-  active: false,
-  moved: false,
-  captureEl: null,
-};
-
-function isPointOverRect(x, y, rect) {
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-}
-
-function clearDropIndicators() {
-  document.querySelectorAll('.item.drop-target').forEach((el) => {
-    el.classList.remove('drop-target');
-  });
-  const trash = document.getElementById('btn-trash');
-  if (trash) {
-    trash.classList.remove('drag-over');
-  }
-}
-
-function getDropElement(clientX, clientY) {
-  const dragging = document.querySelector('.item.dragging');
-  if (dragging) {
-    dragging.style.pointerEvents = 'none';
-  }
-  const el = document.elementFromPoint(clientX, clientY);
-  if (dragging) {
-    dragging.style.pointerEvents = '';
-  }
-  return el;
-}
-
-function updateDropTarget(clientX, clientY) {
-  clearDropIndicators();
-  const trash = document.getElementById('btn-trash');
-  if (trash && !trash.disabled) {
-    const rect = trash.getBoundingClientRect();
-    if (isPointOverRect(clientX, clientY, rect)) {
-      trash.classList.add('drag-over');
-      return;
-    }
-  }
-  const el = getDropElement(clientX, clientY);
-  const targetItem = el && el.closest ? el.closest('.item') : null;
-  if (targetItem && parseItemIndex(targetItem.id) !== dragState.sourceIndex) {
-    targetItem.classList.add('drop-target');
-  }
-}
-
-function finishPointerDrag() {
-  document.querySelectorAll('.item.dragging').forEach((el) => {
-    el.classList.remove('dragging');
-  });
-  clearDropIndicators();
-  if (dragState.captureEl) {
-    dragState.captureEl.removeEventListener('pointermove', onPointerMove);
-    dragState.captureEl.removeEventListener('pointerup', onPointerUp);
-    dragState.captureEl.removeEventListener('pointercancel', onPointerUp);
-  }
-  if (dragState.moved) {
-    suppressItemClick = true;
-    window.setTimeout(() => {
-      suppressItemClick = false;
-    }, 0);
-  }
-  dragState.sourceIndex = null;
-  dragState.pointerId = null;
-  dragState.active = false;
-  dragState.moved = false;
-  dragState.captureEl = null;
-}
-
-function onPointerMove(ev) {
-  if (ev.pointerId !== dragState.pointerId) {
-    return;
-  }
-  const dx = ev.clientX - dragState.startX;
-  const dy = ev.clientY - dragState.startY;
-  if (!dragState.active) {
-    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) {
-      return;
-    }
-    dragState.active = true;
-    dragState.moved = true;
-    const item = document.getElementById('item-' + dragState.sourceIndex);
-    if (item) {
-      item.classList.add('dragging');
-    }
-  }
-  ev.preventDefault();
-  updateDropTarget(ev.clientX, ev.clientY);
-}
-
-function onPointerUp(ev) {
-  if (ev.pointerId !== dragState.pointerId) {
-    return;
-  }
-  if (dragState.captureEl && dragState.captureEl.hasPointerCapture(ev.pointerId)) {
-    dragState.captureEl.releasePointerCapture(ev.pointerId);
-  }
-  if (dragState.active && dragState.sourceIndex !== null) {
-    const x = ev.clientX;
-    const y = ev.clientY;
-    const trash = document.getElementById('btn-trash');
-    if (trash && !trash.disabled) {
-      const rect = trash.getBoundingClientRect();
-      if (isPointOverRect(x, y, rect)) {
-        app.removeItem(dragState.sourceIndex);
-        finishPointerDrag();
-        return;
-      }
-    }
-    const el = getDropElement(x, y);
-    const targetItem = el && el.closest ? el.closest('.item') : null;
-    const list = document.getElementById('list');
-    if (targetItem) {
-      const targetIdx = parseItemIndex(targetItem.id);
-      if (targetIdx !== null && targetIdx !== dragState.sourceIndex) {
-        app.moveItem(dragState.sourceIndex, targetIdx);
-      }
-    } else if (list && el && (el === list || list.contains(el))) {
-      app.moveLast(dragState.sourceIndex);
-    }
-  }
-  finishPointerDrag();
-}
-
-function onPointerDown(ev) {
-  if (ev.pointerType === 'mouse' && ev.button !== 0) {
-    return;
-  }
-  const item = getItemFromEvent(ev);
-  if (!item) {
-    return;
-  }
-  dragState.sourceIndex = parseItemIndex(item.id);
-  if (dragState.sourceIndex === null) {
-    return;
-  }
-  dragState.pointerId = ev.pointerId;
-  dragState.startX = ev.clientX;
-  dragState.startY = ev.clientY;
-  dragState.active = false;
-  dragState.moved = false;
-  dragState.captureEl = item;
-  item.setPointerCapture(ev.pointerId);
-  item.addEventListener('pointermove', onPointerMove);
-  item.addEventListener('pointerup', onPointerUp);
-  item.addEventListener('pointercancel', onPointerUp);
-}
-
-function initPointerDrag(listEl) {
-  listEl.addEventListener('pointerdown', onPointerDown);
-}
 
 function roundTo(value, roundVal = 0.25) {
   return Math.ceil(value / roundVal) * roundVal;
@@ -360,6 +189,12 @@ const app = new Vue({
     finalTotal: 0.0,
     selectedNote: -1,
     showSettings: false,
+    noteMenu: {
+      open: false,
+      x: 0,
+      y: 0,
+      noteIndex: -1,
+    },
   },
   mounted: function () {
     const saved = loadState();
@@ -371,10 +206,6 @@ const app = new Vue({
       this.selValue = saved.selValue;
       this.currNum = saved.currNum;
       this.updateTotal();
-    }
-    const list = document.getElementById('list');
-    if (list) {
-      initPointerDrag(list);
     }
     const btnSettings = document.getElementById('btn-settings');
     if (btnSettings) {
@@ -469,10 +300,69 @@ const app = new Vue({
       this.selValue = selValue;
     },
     selectNote: function (idx) {
-      if (suppressItemClick) {
+      if (suppressItemClick || this.noteMenu.open) {
         return;
       }
       this.selectedNote = idx;
+    },
+    cancelLongPress: function () {
+      if (longPressTimer !== null) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    },
+    notePressStart: function (idx, ev) {
+      if (ev.type === 'mousedown' && ev.button !== 0) {
+        return;
+      }
+      this.cancelLongPress();
+      const touch = ev.touches && ev.touches[0];
+      const x = touch ? touch.clientX : ev.clientX;
+      const y = touch ? touch.clientY : ev.clientY;
+      longPressTimer = window.setTimeout(() => {
+        longPressTimer = null;
+        this.openNoteMenuAt(idx, x, y);
+        if (navigator.vibrate) {
+          navigator.vibrate(20);
+        }
+      }, LONG_PRESS_MS);
+    },
+    notePressEnd: function () {
+      this.cancelLongPress();
+    },
+    notePressCancel: function () {
+      this.cancelLongPress();
+    },
+    openNoteMenu: function (idx, ev) {
+      this.openNoteMenuAt(idx, ev.clientX, ev.clientY);
+    },
+    openNoteMenuAt: function (idx, clientX, clientY) {
+      const menuWidth = 200;
+      const menuHeight = 52;
+      let x = clientX;
+      let y = clientY;
+      x = Math.min(Math.max(8, x), window.innerWidth - menuWidth - 8);
+      y = Math.min(Math.max(8, y), window.innerHeight - menuHeight - 8);
+      this.noteMenu.open = true;
+      this.noteMenu.x = x;
+      this.noteMenu.y = y;
+      this.noteMenu.noteIndex = idx;
+      this.selectedNote = idx;
+      suppressItemClick = true;
+      window.setTimeout(() => {
+        suppressItemClick = false;
+      }, 400);
+    },
+    closeNoteMenu: function () {
+      this.noteMenu.open = false;
+      this.noteMenu.noteIndex = -1;
+    },
+    deleteNoteFromMenu: function () {
+      const idx = this.noteMenu.noteIndex;
+      this.closeNoteMenu();
+      if (idx >= 0) {
+        this.removeItem(idx);
+      }
     },
     moveLast: function (index) {
       this.moveItem(index, this.listNotes.length - 1);

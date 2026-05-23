@@ -30,9 +30,26 @@
   <div id="app" v-on:keyup.left="moveLeft()" v-on:keyup.right="moveRight()">
     <div id="list">
       <div class="item" v-bind:id="'item-' + idx" v-bind:class="{'selected': selectedNote == idx}" tabindex="0"
-        v-for="(note, idx) in listNotes" v-on:click="selectNote(idx)">
+        v-for="(note, idx) in listNotes" v-on:click="selectNote(idx)"
+        v-on:contextmenu.prevent="openNoteMenu(idx, $event)"
+        v-on:touchstart="notePressStart(idx, $event)" v-on:touchend="notePressEnd()"
+        v-on:touchcancel="notePressEnd()" v-on:touchmove="notePressCancel()"
+        v-on:mousedown="notePressStart(idx, $event)" v-on:mouseup="notePressEnd()"
+        v-on:mouseleave="notePressEnd()">
         <span>{{idx+1}}</span>{{note.getVal().toFixed(2)}}
       </div>
+    </div>
+
+    <div class="note-context-backdrop" v-if="noteMenu.open" v-on:click="closeNoteMenu()"
+      v-on:touchstart.prevent="closeNoteMenu()"></div>
+    <div class="note-context-menu" v-if="noteMenu.open" role="menu"
+      v-bind:style="{ left: noteMenu.x + 'px', top: noteMenu.y + 'px' }"
+      v-on:click.stop v-on:touchstart.stop>
+      <p class="note-context-menu__title" v-if="noteMenu.noteIndex >= 0">
+        Note {{noteMenu.noteIndex + 1}} · {{listNotes[noteMenu.noteIndex].getVal().toFixed(2)}}
+      </p>
+      <button type="button" role="menuitem" class="note-context-menu__danger"
+        v-on:click="deleteNoteFromMenu()">Supprimer</button>
     </div>
     <div id="total">
       <div v-if="examBareme !== finalBareme">
@@ -45,7 +62,7 @@
       </div>
 
       <button id="btn-trash" type="button" v-bind:disabled="listNotes.length == 0" v-on:click="resetCalc()"
-        title="Glisser une note ici pour la supprimer · Clic pour tout effacer">🗑</button>
+        title="Effacer toutes les notes">🗑</button>
     </div>
     <div id="control">
       <button id="num" v-on:click="appendNumber()"
