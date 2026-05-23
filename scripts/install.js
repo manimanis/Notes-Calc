@@ -2,7 +2,9 @@
 
 let deferredInstallPrompt = null;
 const installButton = document.getElementById('butInstall');
-installButton.addEventListener('click', installPWA);
+if (installButton) {
+  installButton.addEventListener('click', installPWA);
+}
 
 window.addEventListener('beforeinstallprompt', saveBeforeInstallPromptEvent);
 
@@ -13,8 +15,11 @@ window.addEventListener('beforeinstallprompt', saveBeforeInstallPromptEvent);
  * @param {Event} evt
  */
 function saveBeforeInstallPromptEvent(evt) {
+  evt.preventDefault();
   deferredInstallPrompt = evt;
-  installButton.removeAttribute('hidden');
+  if (installButton) {
+    installButton.removeAttribute('hidden');
+  }
 }
 
 
@@ -47,5 +52,5 @@ window.addEventListener('appinstalled', logAppInstalled);
  * @param {Event} evt
  */
 function logAppInstalled(evt) {
-  console.log('Weather App was installed.', evt);
+  console.log('Calc Notes installée.', evt);
 }

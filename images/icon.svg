@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Calc Notes">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="96" y="120" width="320" height="272" rx="28" fill="#fff" fill-opacity="0.14"/>
+  <text x="256" y="300" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="148" font-weight="700" fill="#fff">20</text>
+  <text x="256" y="372" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="44" font-weight="600" fill="#e0e7ff">/20</text>
+</svg>
