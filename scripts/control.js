@@ -187,26 +187,69 @@ function touchDragEnd(ev) {
   touchDragIndex = null;
 }
 
-function over40RoundTo2ndDec(value) {
-  return value / 2;
-}
-
-function over40RoundTo025(value) {
-  return roundTo(value / 2, 0.25);
-}
-
 function roundTo(value, roundVal = 0.25) {
   return Math.ceil(value / roundVal) * roundVal;
 }
 
-const computeMethods = [
-  (val) => val * 2,
-  (val) => val,
-  (val) => roundTo(val * 2 / 3, 0.25),
-  (val) => val * 2 / 3,
-  (val) => roundTo(val / 2, 0.25),
-  (val) => val / 2,
+function roundToHundredth(value) {
+  return Math.round(value * 100) / 100;
+}
+
+const BAREME_MIN = 5;
+const BAREME_MAX = 100;
+const LEGACY_COMPUTE_METHODS = [
+  { examBareme: 10, finalBareme: 20, roundingMode: 'none' },
+  { examBareme: 20, finalBareme: 20, roundingMode: 'none' },
+  { examBareme: 30, finalBareme: 20, roundingMode: 'quarter' },
+  { examBareme: 30, finalBareme: 20, roundingMode: 'none' },
+  { examBareme: 40, finalBareme: 20, roundingMode: 'quarter' },
+  { examBareme: 40, finalBareme: 20, roundingMode: 'none' },
 ];
+
+const VALID_ROUNDING_MODES = ['none', 'quarter', 'hundredth'];
+
+const NOTE_PRESETS = [
+  { label: '10/10', examBareme: 10, finalBareme: 10 },
+  { label: '20/20', examBareme: 20, finalBareme: 20 },
+  { label: '30/20', examBareme: 30, finalBareme: 20 },
+  { label: '40/20', examBareme: 40, finalBareme: 20 },
+];
+
+const ROUNDING_PRESETS = [
+  { label: 'Aucun', mode: 'none' },
+  { label: '0.25 près', mode: 'quarter' },
+  { label: '2ème décimale', mode: 'hundredth' },
+];
+
+function normalizeRoundingMode(mode, fallback = 'none') {
+  return VALID_ROUNDING_MODES.includes(mode) ? mode : fallback;
+}
+
+function clampBareme(value, fallback = 20) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return fallback;
+  }
+  return Math.min(BAREME_MAX, Math.max(BAREME_MIN, Math.round(n)));
+}
+
+function applyRounding(value, roundingMode) {
+  if (roundingMode === 'quarter') {
+    return roundTo(value, 0.25);
+  }
+  if (roundingMode === 'hundredth') {
+    return roundToHundredth(value);
+  }
+  return value;
+}
+
+function computeFinalTotal(runningTotal, examBareme, finalBareme, roundingMode) {
+  if (examBareme <= 0) {
+    return 0;
+  }
+  const scaled = runningTotal * finalBareme / examBareme;
+  return applyRounding(scaled, roundingMode);
+}
 
 const STORAGE_KEY = 'notes-calc-state';
 
@@ -222,13 +265,28 @@ function saveState(vm) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       listNotes: vm.listNotes.map(noteToJson),
-      computeMethod: vm.computeMethod,
+      examBareme: vm.examBareme,
+      finalBareme: vm.finalBareme,
+      roundingMode: vm.roundingMode,
       selValue: vm.selValue,
       currNum: noteToJson(vm.currNum),
     }));
   } catch (e) {
     console.warn('Impossible d\'enregistrer les notes', e);
   }
+}
+
+function migrateLegacySettings(data) {
+  if (data.examBareme != null && data.finalBareme != null && data.roundingMode) {
+    return {
+      examBareme: clampBareme(data.examBareme, 40),
+      finalBareme: clampBareme(data.finalBareme, 20),
+      roundingMode: normalizeRoundingMode(data.roundingMode, 'none'),
+    };
+  }
+  const idx = Number(data.computeMethod);
+  const legacy = LEGACY_COMPUTE_METHODS[idx] || LEGACY_COMPUTE_METHODS[5];
+  return legacy;
 }
 
 function loadState() {
@@ -241,9 +299,12 @@ function loadState() {
     if (!Array.isArray(data.listNotes)) {
       return null;
     }
+    const settings = migrateLegacySettings(data);
     return {
       listNotes: data.listNotes.map(noteFromJson),
-      computeMethod: Number(data.computeMethod),
+      examBareme: settings.examBareme,
+      finalBareme: settings.finalBareme,
+      roundingMode: settings.roundingMode,
       selValue: data.selValue ?? 0,
       currNum: data.currNum ? noteFromJson(data.currNum) : new DecimalNumber(),
     };
@@ -258,19 +319,24 @@ const app = new Vue({
   data: {
     currNum: new DecimalNumber(),
     listNotes: [],
-    baremes: [10, 20, 30, 30, 40, 40],
+    notePresets: NOTE_PRESETS,
+    roundingPresets: ROUNDING_PRESETS,
+    examBareme: 40,
+    finalBareme: 20,
+    roundingMode: 'none',
     selValue: 0,
     runningTotal: 0.0,
     finalTotal: 0.0,
-    computeMethod: 5,
-    bareme: 40,
-    selectedNote: -1
+    selectedNote: -1,
+    showSettings: false,
   },
   mounted: function () {
     const saved = loadState();
     if (saved) {
       this.listNotes = saved.listNotes;
-      this.computeMethod = saved.computeMethod;
+      this.examBareme = saved.examBareme;
+      this.finalBareme = saved.finalBareme;
+      this.roundingMode = saved.roundingMode;
       this.selValue = saved.selValue;
       this.currNum = saved.currNum;
       this.updateTotal();
@@ -278,6 +344,12 @@ const app = new Vue({
     const list = document.getElementById('list');
     if (list) {
       list.addEventListener('touchmove', touchDragMove, { passive: false });
+    }
+    const btnSettings = document.getElementById('btn-settings');
+    if (btnSettings) {
+      btnSettings.addEventListener('click', () => {
+        this.showSettings = true;
+      });
     }
   },
   watch: {
@@ -287,7 +359,13 @@ const app = new Vue({
       },
       deep: true,
     },
-    computeMethod: function () {
+    examBareme: function () {
+      saveState(this);
+    },
+    finalBareme: function () {
+      saveState(this);
+    },
+    roundingMode: function () {
       saveState(this);
     },
     selValue: function () {
@@ -317,7 +395,34 @@ const app = new Vue({
       for (let note of this.listNotes) {
         this.runningTotal += note.getVal();
       }
-      this.finalTotal = computeMethods[this.computeMethod](this.runningTotal);
+      this.finalTotal = computeFinalTotal(
+        this.runningTotal,
+        this.examBareme,
+        this.finalBareme,
+        this.roundingMode,
+      );
+    },
+    openSettings: function () {
+      this.showSettings = true;
+    },
+    closeSettings: function () {
+      this.showSettings = false;
+    },
+    applyNotePreset: function (preset) {
+      this.examBareme = preset.examBareme;
+      this.finalBareme = preset.finalBareme;
+      this.updateTotal();
+    },
+    isNotePresetActive: function (preset) {
+      return this.examBareme === preset.examBareme
+        && this.finalBareme === preset.finalBareme;
+    },
+    applyRoundingPreset: function (mode) {
+      this.roundingMode = mode;
+      this.updateTotal();
+    },
+    isRoundingPresetActive: function (mode) {
+      return this.roundingMode === mode;
     },
     resetCalc: function () {
       if (!confirm("Effacer les données ?")) {

@@ -20,7 +20,7 @@
 <body>
   <nav class="toolbar" aria-label="Actions">
     <button id="butInstall" type="button" aria-label="Installer l'application" hidden></button>
-    <button id="btn-settings" type="button" aria-label="Paramètres" hidden></button>
+    <button id="btn-settings" type="button" aria-label="Paramètres"></button>
   </nav>
 
   <div id="app" v-on:keyup.left="moveLeft()" v-on:keyup.right="moveRight()">
@@ -35,8 +35,8 @@
       </div>
     </div>
     <div id="total">
-      <div v-if="baremes[computeMethod] != 20">
-        <div class="title">Barème sur {{baremes[computeMethod]}}</div>
+      <div v-if="examBareme !== finalBareme">
+        <div class="title">Barème sur {{examBareme}}</div>
         <div id="runningTotal">{{runningTotal.toFixed(2)}}</div>
       </div>
       <div>
@@ -66,15 +66,48 @@
         <button v-for="n in 5" v-bind:class="{'is-active': selValue === (n - 1) * 5}"
           v-on:click="setBaseValue((n - 1) * 5)">{{(n - 1) * 5}}</button>
       </div>
-      <div id="rounding">
-        <select v-model="computeMethod" v-on:change="updateTotal()">
-          <option value="0">Note sur 10</option>
-          <option value="1">Note sur 20</option>
-          <option value="2">Note sur 30, Arrondi à 0.25 près</option>
-          <option value="3">Note sur 30, Arrondi 2<sup>ème</sup> décimale</option>
-          <option value="4">Note sur 40, Arrondi à 0.25 près</option>
-          <option value="5">Note sur 40, Arrondi 2<sup>ème</sup> décimale</option>
-        </select>
+    </div>
+
+    <div class="settings-overlay" v-if="showSettings" v-on:click.self="closeSettings()"
+      role="presentation">
+      <div class="settings-panel" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+        <h2 id="settings-title">Configuration</h2>
+        <form class="settings-form" v-on:submit.prevent="closeSettings()">
+          <fieldset class="settings-presets">
+            <legend>Notes</legend>
+            <div class="settings-preset-group" role="group" aria-label="Barèmes prédéfinis">
+              <button type="button" class="settings-preset-btn" v-for="preset in notePresets"
+                v-bind:key="preset.label"
+                v-bind:class="{'is-active': isNotePresetActive(preset)}"
+                v-on:click="applyNotePreset(preset)">{{preset.label}}</button>
+            </div>
+          </fieldset>
+          <label class="settings-field" for="exam-bareme">
+            <span class="settings-field-label">Barème de l'examen <strong>Sur {{examBareme}}</strong></span>
+            <input type="range" id="exam-bareme" class="settings-range" min="5" max="100" step="1"
+              v-model.number="examBareme" v-on:input="updateTotal()"
+              v-bind:aria-valuenow="examBareme" aria-valuemin="5" aria-valuemax="100">
+          </label>
+          <label class="settings-field" for="final-bareme">
+            <span class="settings-field-label">Barème de la note finale <strong>Sur {{finalBareme}}</strong></span>
+            <input type="range" id="final-bareme" class="settings-range" min="5" max="100" step="1"
+              v-model.number="finalBareme" v-on:input="updateTotal()"
+              v-bind:aria-valuenow="finalBareme" aria-valuemin="5" aria-valuemax="100">
+          </label>
+          <fieldset class="settings-presets">
+            <legend>Arrondissement</legend>
+            <div class="settings-preset-group settings-preset-group--rounding" role="group"
+              aria-label="Modes d'arrondissement prédéfinis">
+              <button type="button" class="settings-preset-btn" v-for="preset in roundingPresets"
+                v-bind:key="preset.mode"
+                v-bind:class="{'is-active': isRoundingPresetActive(preset.mode)}"
+                v-on:click="applyRoundingPreset(preset.mode)">{{preset.label}}</button>
+            </div>
+          </fieldset>
+          <div class="settings-actions">
+            <button type="submit" class="settings-btn-primary">Fermer</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
