@@ -56,135 +56,166 @@ function getItemFromEvent(ev) {
   return el && el.id ? el : null;
 }
 
-function dragstartHandler(ev) {
-  const item = getItemFromEvent(ev);
-  if (!item) {
-    return;
-  }
-  ev.dataTransfer.setData('text/plain', item.id);
-  ev.dataTransfer.effectAllowed = 'move';
-  item.classList.add('dragging');
+const DRAG_THRESHOLD = 10;
+let suppressItemClick = false;
+
+const dragState = {
+  sourceIndex: null,
+  pointerId: null,
+  startX: 0,
+  startY: 0,
+  active: false,
+  moved: false,
+  captureEl: null,
+};
+
+function isPointOverRect(x, y, rect) {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
-function dragendHandler(ev) {
-  const item = getItemFromEvent(ev) || document.querySelector('.item.dragging');
-  if (item) {
-    item.classList.remove('dragging');
-  }
+function clearDropIndicators() {
+  document.querySelectorAll('.item.drop-target').forEach((el) => {
+    el.classList.remove('drop-target');
+  });
   const trash = document.getElementById('btn-trash');
   if (trash) {
     trash.classList.remove('drag-over');
   }
 }
 
-function dragoverHandler(ev) {
-  ev.preventDefault();
-  if (ev.dataTransfer) {
-    ev.dataTransfer.dropEffect = 'move';
-  }
-}
-
-function trashDragEnterHandler(ev) {
-  ev.preventDefault();
-  ev.stopPropagation();
-  const trash = document.getElementById('btn-trash');
-  if (trash && !trash.disabled) {
-    trash.classList.add('drag-over');
-  }
-}
-
-function trashDragLeaveHandler(ev) {
-  const trash = document.getElementById('btn-trash');
-  if (!trash || trash.disabled) {
-    return;
-  }
-  if (!trash.contains(ev.relatedTarget)) {
-    trash.classList.remove('drag-over');
-  }
-}
-
-function dropHandler(ev) {
-  ev.preventDefault();
-  ev.stopPropagation();
-  const trash = document.getElementById('btn-trash');
-  if (trash) {
-    trash.classList.remove('drag-over');
-  }
-  if (trash && trash.disabled) {
-    return;
-  }
-  const idx = parseItemIndex(ev.dataTransfer.getData('text/plain'));
-  if (idx !== null) {
-    app.removeItem(idx);
-  }
-}
-
-function dropHandlerMoveLast(ev) {
-  ev.preventDefault();
-  ev.stopPropagation();
-  const idx = parseItemIndex(ev.dataTransfer.getData('text/plain'));
-  if (idx !== null) {
-    app.moveLast(idx);
-  }
-}
-
-function dropHandlerMoveBefore(ev) {
-  ev.preventDefault();
-  ev.stopPropagation();
-  const sourceIdx = parseItemIndex(ev.dataTransfer.getData('text/plain'));
-  const targetEl = ev.target.closest('.item');
-  const targetIdx = targetEl ? parseItemIndex(targetEl.id) : null;
-  if (sourceIdx !== null && targetIdx !== null && sourceIdx !== targetIdx) {
-    app.moveItem(sourceIdx, targetIdx);
-  }
-}
-
-let touchDragIndex = null;
-
-function touchDragStart(ev) {
-  const item = getItemFromEvent(ev);
-  if (!item) {
-    return;
-  }
-  touchDragIndex = parseItemIndex(item.id);
-  item.classList.add('dragging');
-}
-
-function touchDragMove(ev) {
-  if (touchDragIndex === null) {
-    return;
-  }
-  ev.preventDefault();
-  const touch = ev.touches[0];
-  const trash = document.getElementById('btn-trash');
-  if (!trash || trash.disabled) {
-    return;
-  }
-  const rect = trash.getBoundingClientRect();
-  const over = touch.clientX >= rect.left && touch.clientX <= rect.right
-    && touch.clientY >= rect.top && touch.clientY <= rect.bottom;
-  trash.classList.toggle('drag-over', over);
-}
-
-function touchDragEnd(ev) {
+function getDropElement(clientX, clientY) {
   const dragging = document.querySelector('.item.dragging');
   if (dragging) {
-    dragging.classList.remove('dragging');
+    dragging.style.pointerEvents = 'none';
   }
+  const el = document.elementFromPoint(clientX, clientY);
+  if (dragging) {
+    dragging.style.pointerEvents = '';
+  }
+  return el;
+}
+
+function updateDropTarget(clientX, clientY) {
+  clearDropIndicators();
   const trash = document.getElementById('btn-trash');
-  if (touchDragIndex !== null && trash && !trash.disabled) {
-    const touch = ev.changedTouches[0];
+  if (trash && !trash.disabled) {
     const rect = trash.getBoundingClientRect();
-    const over = touch.clientX >= rect.left && touch.clientX <= rect.right
-      && touch.clientY >= rect.top && touch.clientY <= rect.bottom;
-    if (over) {
-      app.removeItem(touchDragIndex);
+    if (isPointOverRect(clientX, clientY, rect)) {
+      trash.classList.add('drag-over');
+      return;
     }
   }
-  if (trash) {
-    trash.classList.remove('drag-over');
+  const el = getDropElement(clientX, clientY);
+  const targetItem = el && el.closest ? el.closest('.item') : null;
+  if (targetItem && parseItemIndex(targetItem.id) !== dragState.sourceIndex) {
+    targetItem.classList.add('drop-target');
   }
-  touchDragIndex = null;
+}
+
+function finishPointerDrag() {
+  document.querySelectorAll('.item.dragging').forEach((el) => {
+    el.classList.remove('dragging');
+  });
+  clearDropIndicators();
+  if (dragState.captureEl) {
+    dragState.captureEl.removeEventListener('pointermove', onPointerMove);
+    dragState.captureEl.removeEventListener('pointerup', onPointerUp);
+    dragState.captureEl.removeEventListener('pointercancel', onPointerUp);
+  }
+  if (dragState.moved) {
+    suppressItemClick = true;
+    window.setTimeout(() => {
+      suppressItemClick = false;
+    }, 0);
+  }
+  dragState.sourceIndex = null;
+  dragState.pointerId = null;
+  dragState.active = false;
+  dragState.moved = false;
+  dragState.captureEl = null;
+}
+
+function onPointerMove(ev) {
+  if (ev.pointerId !== dragState.pointerId) {
+    return;
+  }
+  const dx = ev.clientX - dragState.startX;
+  const dy = ev.clientY - dragState.startY;
+  if (!dragState.active) {
+    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) {
+      return;
+    }
+    dragState.active = true;
+    dragState.moved = true;
+    const item = document.getElementById('item-' + dragState.sourceIndex);
+    if (item) {
+      item.classList.add('dragging');
+    }
+  }
+  ev.preventDefault();
+  updateDropTarget(ev.clientX, ev.clientY);
+}
+
+function onPointerUp(ev) {
+  if (ev.pointerId !== dragState.pointerId) {
+    return;
+  }
+  if (dragState.captureEl && dragState.captureEl.hasPointerCapture(ev.pointerId)) {
+    dragState.captureEl.releasePointerCapture(ev.pointerId);
+  }
+  if (dragState.active && dragState.sourceIndex !== null) {
+    const x = ev.clientX;
+    const y = ev.clientY;
+    const trash = document.getElementById('btn-trash');
+    if (trash && !trash.disabled) {
+      const rect = trash.getBoundingClientRect();
+      if (isPointOverRect(x, y, rect)) {
+        app.removeItem(dragState.sourceIndex);
+        finishPointerDrag();
+        return;
+      }
+    }
+    const el = getDropElement(x, y);
+    const targetItem = el && el.closest ? el.closest('.item') : null;
+    const list = document.getElementById('list');
+    if (targetItem) {
+      const targetIdx = parseItemIndex(targetItem.id);
+      if (targetIdx !== null && targetIdx !== dragState.sourceIndex) {
+        app.moveItem(dragState.sourceIndex, targetIdx);
+      }
+    } else if (list && el && (el === list || list.contains(el))) {
+      app.moveLast(dragState.sourceIndex);
+    }
+  }
+  finishPointerDrag();
+}
+
+function onPointerDown(ev) {
+  if (ev.pointerType === 'mouse' && ev.button !== 0) {
+    return;
+  }
+  const item = getItemFromEvent(ev);
+  if (!item) {
+    return;
+  }
+  dragState.sourceIndex = parseItemIndex(item.id);
+  if (dragState.sourceIndex === null) {
+    return;
+  }
+  dragState.pointerId = ev.pointerId;
+  dragState.startX = ev.clientX;
+  dragState.startY = ev.clientY;
+  dragState.active = false;
+  dragState.moved = false;
+  dragState.captureEl = item;
+  item.setPointerCapture(ev.pointerId);
+  item.addEventListener('pointermove', onPointerMove);
+  item.addEventListener('pointerup', onPointerUp);
+  item.addEventListener('pointercancel', onPointerUp);
+}
+
+function initPointerDrag(listEl) {
+  listEl.addEventListener('pointerdown', onPointerDown);
 }
 
 function roundTo(value, roundVal = 0.25) {
@@ -343,7 +374,7 @@ const app = new Vue({
     }
     const list = document.getElementById('list');
     if (list) {
-      list.addEventListener('touchmove', touchDragMove, { passive: false });
+      initPointerDrag(list);
     }
     const btnSettings = document.getElementById('btn-settings');
     if (btnSettings) {
@@ -438,6 +469,9 @@ const app = new Vue({
       this.selValue = selValue;
     },
     selectNote: function (idx) {
+      if (suppressItemClick) {
+        return;
+      }
       this.selectedNote = idx;
     },
     moveLast: function (index) {
